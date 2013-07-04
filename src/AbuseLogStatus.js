@@ -124,7 +124,11 @@ function addAbuseFilterStatusLinks(){
 	);
 }
 
-if ( mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog' && revision && revision[1] ) {
+if ( mw.config.get( 'wgDBname' ) === 'ptwiki'
+	&& mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog'
+	&& revision
+	&& revision[1]
+) {
 	revision = revision[1];
 	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ) );
 	$( addAbuseFilterStatusLinks );
