@@ -36,8 +36,10 @@ function onClick ( e ){
 		statusText = $( e.target ).text(),
 		falsePositive = statusText === mw.msg( 'al-problem-text' ),
 		defineStatus = function ( data ){
-			var template,
-				text = data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
+			var template, start,
+				text = data.query.pages[ data.query.pageids[0] ].missing === ''
+					? '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n'
+					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
 			if ( !note ){
 				template = falsePositive
 					? mw.msg( 'al-problem-template', revision )
@@ -52,6 +54,12 @@ function onClick ( e ){
 			} else {
 				text = text.replace( reTemplate, template );
 			}
+			start = text.search( /^.*\{\{[Aa]ção/m );
+			text = text.substr( 0, start ) +
+				text.substr( start )
+					.split( '\n' )
+					.sort()
+					.join( '\n' );
 			( new mw.Api() ).post( {
 				action: 'edit',
 				title: mw.msg( 'al-page-title', filter ),
