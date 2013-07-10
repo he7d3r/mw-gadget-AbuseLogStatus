@@ -23,8 +23,7 @@ mw.messages.set( {
 	'al-problem-template': '* {{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '* {{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '* {{Ação|$1|erro=sim|nota=$2}}\n',
-	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\| *(?:1 *= *)?($1) *' +
-		'(?:\\| *erro *=.*?)? *(?:\\| *nota *=.*?)?\\}\\} *(?:\n|$)'
+	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^ \\}]*($1)[^ \\}]*?\\}\\} *(?:\\n|$)'
 } );
 
 var $links, filter, reTemplate,
