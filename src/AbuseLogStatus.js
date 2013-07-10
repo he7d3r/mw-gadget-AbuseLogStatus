@@ -58,7 +58,8 @@ function onClick ( e ){
 				text.substr( start )
 					.split( '\n' )
 					.sort()
-					.join( '\n' );
+					.join( '\n' )
+					.replace( /^\n+/g, '' );
 			( new mw.Api() ).post( {
 				action: 'edit',
 				title: mw.msg( 'al-page-title', filter ),
