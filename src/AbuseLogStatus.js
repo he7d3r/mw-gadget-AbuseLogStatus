@@ -59,7 +59,9 @@ function onClick ( e ){
 					.split( '\n' )
 					.sort()
 					.join( '\n' )
-					.replace( /^\n+/g, '' );
+					.replace( /^\n+/g, '' )
+					// TODO: remove this temporary hack
+					.replace( /\| *nota *= *,/g, '|nota=' );
 			( new mw.Api() ).post( {
 				action: 'edit',
 				title: mw.msg( 'al-page-title', filter ),
