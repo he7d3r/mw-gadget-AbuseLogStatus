@@ -54,7 +54,7 @@ function onClick ( e ){
 				text = text.replace( reTemplate, template );
 			}
 			start = text.search( /^.*\{\{[Aa]ção/m );
-			text = text.substr( 0, start ) +
+			text = text.substr( 0, start ).replace( /\n+$/g, '\n\n' ) +
 				text.substr( start )
 					.split( '\n' )
 					.sort()
