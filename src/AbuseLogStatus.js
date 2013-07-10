@@ -19,7 +19,7 @@ mw.messages.set( {
 	'al-correct-description': 'Marcar este registro como correto',
 	'al-problem-description': 'Marcar este registro como falso positivo',
 	'al-summary': 'Status do registro [[Especial:Registro de abusos/$1|$1]]: $2' +
-		' (edição feita com [[WP:Filtro de edições/Falsos positivos#Script (experimental)|um script]])',
+		' (edição feita com [[Special:PermaLink/36362748#Script (experimental)|um script]])',
 	'al-correct-template': '* {{Ação|$1}}\n',
 	'al-problem-template': '* {{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '* {{Ação|$1|nota=$2}}\n',
