@@ -155,6 +155,9 @@ function markAbuseFilterEntriesByStatus( texts ){
 				match = href.match( reFilterLink );
 			if( match && match[1] ){
 				filter = match[1];
+				if( !texts[ filter ] ){
+					return false;
+				}
 			} else {
 				match = href.match( reDetailsPage );
 				if( match && match[1] ){
@@ -177,8 +180,6 @@ function markAbuseFilterEntriesByStatus( texts ){
 							.attr( 'title', 'Um editor já identificou que este registro estava correto' );
 					}
 				}
-				
-				// stop the loop
 				return false;
 			}
 		} ).first().attr( 'href' );
