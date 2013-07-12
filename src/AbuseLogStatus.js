@@ -24,17 +24,15 @@ mw.messages.set( {
 	'al-problem-template': '* {{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '* {{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '* {{Ação|$1|erro=sim|nota=$2}}\n',
-	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^ \\}]*($1)[^ \\}]*?\\}\\} *(?:\\n|$)'
+	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)'
 } );
 
-var $links, filter, reTemplate,
-	reDetailsLink = new RegExp( '/' + $.escapeRE( mw.config.get( 'wgPageName' ) ) + '$' ),
-	revision = mw.config.get( 'wgPageName' ).match( /\/(\d+)$/ );
-	
+var $links, filter, reTemplate, reDetailsPage, revision;
+
 function onClick ( e ){
 	var note,
-		statusText = $( e.target ).text(),
-		falsePositive = statusText === mw.msg( 'al-problem-text' ),
+		statusTexts = $( e.target ).text(),
+		falsePositive = statusTexts === mw.msg( 'al-problem-text' ),
 		defineStatus = function ( data ){
 			var template, start,
 				text = data.query.pages[ data.query.pageids[0] ].missing === ''
@@ -67,14 +65,23 @@ function onClick ( e ){
 				action: 'edit',
 				title: mw.msg( 'al-page-title', filter ),
 				text: text,
-				summary: mw.msg( 'al-summary', revision, statusText ),
+				summary: mw.msg( 'al-summary', revision, statusTexts ),
 				minor: true,
 				watchlist: 'nochange',
 				token: mw.user.tokens.get( 'editToken' )
 			} )
 			.done( function( data ) {
-				if ( data && data.edit && data.edit.result && data.edit.result === 'Success' ) {
-					mw.notify( 'A página foi editada.' );
+				var link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=0';
+				if ( data.edit && data.edit.result && data.edit.result === 'Success' ) {
+					mw.notify(
+						$( '<p>' ).append(
+							'A página ',
+							$( '<a>' )
+								.attr( 'href', link )
+								.text( 'foi editada' ),
+							'.'
+						)
+					);
 				} else {
 					mw.notify( 'Houve um erro ao tentar editar' );
 				}
@@ -99,8 +106,7 @@ function onClick ( e ){
 				titles: mw.msg( 'al-page-title', filter )
 			} )
 			.done( defineStatus )
-			.fail( function ( data ) {
-				mw.log( 'Error:', data.query );
+			.fail( function () {
 				$.removeSpinner( 'af-status-spinner' );
 			} );
 		};
@@ -112,8 +118,9 @@ function onClick ( e ){
 function addAbuseFilterStatusLinks(){
 	var $link;
 	$links = $( '#mw-content-text' ).find( 'fieldset p > span > a' );
+	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ) );
 	$link = $links.filter( function(){
-		return reDetailsLink.test( $( this ).attr( 'href' ) );
+		return reDetailsPage.test( $( this ).attr( 'href' ) );
 	} ).first();
 	$link.parent().append(
 		' (',
@@ -135,15 +142,84 @@ function addAbuseFilterStatusLinks(){
 		')'
 	);
 }
+function markAbuseFilterEntriesByStatus( texts ){
+	var reFilterLink = /\/Especial:Filtro_de_abusos\/(\d+)/;
+	mw.util.addCSS(
+		'.af-log-false-positive { background: #FDD; } ' +
+		'.af-log-correct { background: #DFD; }'
+	);
+	$( '#mw-content-text' ).find( 'li' ).each( function(){
+		var filter, log, $currentLi = $( this );
+		$currentLi.find( 'a' ).each( function(){
+			var href = $( this ).attr( 'href' ),
+				match = href.match( reFilterLink );
+			if( match && match[1] ){
+				filter = match[1];
+			} else {
+				match = href.match( reDetailsPage );
+				if( match && match[1] ){
+					log = match[1];
+				}
+			}
+			if( log && filter ){
+				reTemplate = new RegExp( mw.msg( 'al-template-regex', log ) );
+				match = texts[ filter ].match( reTemplate );
+				if( match && match[0] ){
+					// Highlight log entries already checked
+					if( /\| *erro *= *sim/.test( match[0] ) ){
+						// add af-false-positive class
+						$currentLi
+							.addClass( 'af-log-false-positive' )
+							.attr( 'title', 'Um editor já identificou que este registro foi um falso positivo' );
+					} else {
+						$currentLi
+							.addClass( 'af-log-correct' )
+							.attr( 'title', 'Um editor já identificou que este registro estava correto' );
+					}
+				}
+				
+				// stop the loop
+				return false;
+			}
+		} ).first().attr( 'href' );
+	} );
+}
 
-if ( mw.config.get( 'wgDBname' ) === 'ptwiki'
-	&& mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog'
-	&& revision
-	&& revision[1]
+function getVerificationPages(){
+	var statusTexts = {};
+	( new mw.Api() ).get( {
+		action: 'query',
+		prop: 'revisions',
+		rvprop: 'content',
+		generator: 'embeddedin',
+		geititle: 'Predefinição:Lista de falsos positivos (cabeçalho)',
+		geinamespace: 4
+		// geilimit: 10,
+	} )
+	.done( function ( data ) {
+		$.each( data.query.pages, function(id){
+			var filter = data.query.pages[ id ].title.match( /\d+$/ );
+			if( filter && filter[0] ){
+				statusTexts[ filter[0] ] = data.query.pages[ id ].revisions[0]['*'];
+			}
+		} );
+		markAbuseFilterEntriesByStatus( statusTexts );
+	} );
+}
+
+if ( mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog'
+	&& mw.config.get( 'wgDBname' ) === 'ptwiki'
 ) {
-	revision = revision[1];
-	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ) );
-	$( addAbuseFilterStatusLinks );
+	reDetailsPage = /Especial:Registro_de_abusos\/(\d+)$/;
+	if ( mw.config.get( 'wgTitle' ) === 'Registro de abusos' ){
+		$( getVerificationPages );
+	} else {
+		revision = mw.config.get( 'wgPageName' ).match( reDetailsPage );
+		if( revision && revision[1] ){
+			revision = revision[1];
+			$( addAbuseFilterStatusLinks );
+		}
+	}
 }
 
 }( mediaWiki, jQuery ) );
