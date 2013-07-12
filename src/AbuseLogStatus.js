@@ -24,7 +24,12 @@ mw.messages.set( {
 	'al-problem-template': '* {{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '* {{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '* {{Ação|$1|erro=sim|nota=$2}}\n',
-	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)'
+	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)',
+	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
+	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
+	'al-page-edit-error': 'Houve um erro ao tentar editar.',
+	'al-log-false-positive': 'Um editor já identificou que este registro foi um falso positivo',
+	'al-log-correct': 'Um editor já identificou que este registro estava correto'
 } );
 
 var $links, filter, reTemplate, reDetailsPage, revision;
@@ -36,7 +41,7 @@ function onClick ( e ){
 		defineStatus = function ( data ){
 			var template, start,
 				text = data.query.pages[ data.query.pageids[0] ].missing === ''
-					? '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n'
+					? mw.msg( 'al-problem-template' )
 					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
 			if ( !note ){
 				template = falsePositive
@@ -73,17 +78,9 @@ function onClick ( e ){
 			.done( function( data ) {
 				var link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=0';
 				if ( data.edit && data.edit.result && data.edit.result === 'Success' ) {
-					mw.notify(
-						$( '<p>' ).append(
-							'A página ',
-							$( '<a>' )
-								.attr( 'href', link )
-								.text( 'foi editada' ),
-							'.'
-						)
-					);
+					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ) );
 				} else {
-					mw.notify( 'Houve um erro ao tentar editar' );
+					mw.notify( mw.msg( 'al-page-edit-error' ) );
 				}
 			} ).always( function(){
 				$.removeSpinner( 'af-status-spinner' );
@@ -173,11 +170,11 @@ function markAbuseFilterEntriesByStatus( texts ){
 						// add af-false-positive class
 						$currentLi
 							.addClass( 'af-log-false-positive' )
-							.attr( 'title', 'Um editor já identificou que este registro foi um falso positivo' );
+							.attr( 'title', mw.msg( 'al-log-false-positive' ) );
 					} else {
 						$currentLi
 							.addClass( 'af-log-correct' )
-							.attr( 'title', 'Um editor já identificou que este registro estava correto' );
+							.attr( 'title', mw.msg( 'al-log-correct' ) );
 					}
 				}
 				return false;
