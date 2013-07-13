@@ -191,8 +191,8 @@ function getVerificationPages(){
 		rvprop: 'content',
 		generator: 'embeddedin',
 		geititle: 'Predefinição:Lista de falsos positivos (cabeçalho)',
-		geinamespace: 4
-		// geilimit: 10,
+		geinamespace: 4,
+		geilimit: 'max'
 	} )
 	.done( function ( data ) {
 		$.each( data.query.pages, function(id){
