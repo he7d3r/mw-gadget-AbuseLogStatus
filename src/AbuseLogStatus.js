@@ -41,7 +41,7 @@ function onClick ( e ){
 		defineStatus = function ( data ){
 			var template, start,
 				text = data.query.pages[ data.query.pageids[0] ].missing === ''
-					? mw.msg( 'al-problem-template' )
+					? mw.msg( 'al-empty-page' )
 					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
 			if ( !note ){
 				template = falsePositive
