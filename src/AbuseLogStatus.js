@@ -41,6 +41,7 @@ var filter, reTemplate, reDetailsPage, revision;
 
 function onClick ( e ){
 	var note,
+		$button = $( e.target ),
 		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
 		defineStatus = function ( data ){
 			var template, start,
@@ -87,6 +88,7 @@ function onClick ( e ){
 				var link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=0';
 				if ( data.edit && data.edit.result && data.edit.result === 'Success' ) {
 					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), { autoHide: false } );
+					$button.removeAttr('disabled');
 				} else {
 					mw.notify( mw.msg( 'al-page-edit-error' ), { autoHide: false } );
 				}
@@ -115,7 +117,7 @@ function onClick ( e ){
 				$.removeSpinner( 'af-status-spinner' );
 			} );
 		};
-	$( e.target ).attr( 'disabled', 'disabled' );
+	$button.attr( 'disabled', 'disabled' );
 	note = $( '#al-note' ).val();
 	mw.loader.using( [ 'mediawiki.api.edit', 'jquery.spinner' ], getPageContent );
 }
