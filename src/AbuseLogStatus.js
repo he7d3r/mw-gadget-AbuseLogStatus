@@ -12,14 +12,8 @@
 /* Translatable strings */
 mw.messages.set( {
 	'al-page-title': 'Wikipédia:Filtro_de_edições/Falsos_positivos/Filtro_$1',
-	'al-correct-text': 'correto',
-	'al-problem-text': 'falso positivo',
-	'al-note-description': 'Se precisar inserir uma observação sobre este registro,' +
-		' digite-a abaixo e pressione "OK". Caso contrário, escolhar "Cancelar"',
-	'al-correct-description': 'Marcar este registro como correto',
-	'al-problem-description': 'Marcar este registro como falso positivo',
 	'al-summary': 'Status do registro [[Especial:Registro de abusos/$1|$1]]: $2' +
-		' (edição feita com [[Special:PermaLink/36382872#Script (experimental)|um script]])',
+		' (edição feita com [[Special:PermaLink/36600646#Script (experimental)|um script]])',
 	'al-correct-template': '* {{Ação|$1}}\n',
 	'al-problem-template': '* {{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '* {{Ação|$1|nota=$2}}\n',
@@ -29,15 +23,25 @@ mw.messages.set( {
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
 	'al-page-edit-error': 'Houve um erro ao tentar editar.',
 	'al-log-false-positive': 'Um editor já identificou que este registro foi um falso positivo',
-	'al-log-correct': 'Um editor já identificou que este registro estava correto'
+	'al-log-correct': 'Um editor já identificou que este registro estava correto',
+	'al-header': 'Análise',
+	'al-question': 'Este filtro deveria ter detectado esta ação?',
+	'al-correct-description': 'Marcar este registro como correto',
+	'al-yes': 'Sim',
+	'al-correct': 'Correto',
+	'al-incorrect-description': 'Marcar este registro como falso positivo',
+	'al-no': 'Não',
+	'al-incorrect': 'Falso positivo',
+	'al-placeholder': 'Observação sobre esta ação (se precisar)',
+	'al-submit': 'Enviar',
+	'al-submit-description': 'Enviar a sua análise (editará automaticamente a página apropriada)'
 } );
 
-var $links, filter, reTemplate, reDetailsPage, revision;
+var filter, reTemplate, reDetailsPage, revision;
 
 function onClick ( e ){
 	var note,
-		statusTexts = $( e.target ).text(),
-		falsePositive = statusTexts === mw.msg( 'al-problem-text' ),
+		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
 		defineStatus = function ( data ){
 			var template, start,
 				text = data.query.pages[ data.query.pageids[0] ].missing === ''
@@ -70,7 +74,11 @@ function onClick ( e ){
 				action: 'edit',
 				title: mw.msg( 'al-page-title', filter ),
 				text: text,
-				summary: mw.msg( 'al-summary', revision, statusTexts ),
+				summary: mw.msg(
+					'al-summary',
+					revision,
+					falsePositive ? mw.msg( 'al-incorrect' ) : mw.msg( 'al-correct' )
+				),
 				minor: true,
 				watchlist: 'nochange',
 				token: mw.user.tokens.get( 'editToken' )
@@ -78,23 +86,23 @@ function onClick ( e ){
 			.done( function( data ) {
 				var link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=0';
 				if ( data.edit && data.edit.result && data.edit.result === 'Success' ) {
-					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ) );
+					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), { autoHide: false } );
 				} else {
-					mw.notify( mw.msg( 'al-page-edit-error' ) );
+					mw.notify( mw.msg( 'al-page-edit-error' ), { autoHide: false } );
 				}
 			} ).always( function(){
 				$.removeSpinner( 'af-status-spinner' );
 			} );
 		},
 		getPageContent = function (){
-			$links.each( function(){
+			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
 				filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
 				if( filter && filter[1] ){
 					filter = filter[1];
 					return false;
 				}
 			} );
-			$( '#firstHeading' ).injectSpinner( 'af-status-spinner' );
+			$( '#al-submit' ).injectSpinner( 'af-status-spinner' );
 			( new mw.Api() ).get( {
 				prop: 'revisions',
 				rvprop: 'content',
@@ -107,36 +115,51 @@ function onClick ( e ){
 				$.removeSpinner( 'af-status-spinner' );
 			} );
 		};
-	e.preventDefault();
-	note = prompt( mw.msg( 'al-note-description' ) );
+	$( e.target ).attr( 'disabled', 'disabled' );
+	note = $( '#al-note' ).val();
 	mw.loader.using( [ 'mediawiki.api.edit', 'jquery.spinner' ], getPageContent );
 }
 
 function addAbuseFilterStatusLinks(){
-	var $link;
-	$links = $( '#mw-content-text' ).find( 'fieldset p > span > a' );
 	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ) );
-	$link = $links.filter( function(){
-		return reDetailsPage.test( $( this ).attr( 'href' ) );
-	} ).first();
-	$link.parent().append(
-		' (',
-		$link.clone()
-			.text( mw.msg( 'al-correct-text' ) )
-			.attr( {
-				'href': '#',
-				'title': mw.msg( 'al-correct-description' )
-			} )
-			.click( onClick ),
-		' | ',
-		$link.clone()
-			.text( mw.msg( 'al-problem-text' ) )
-			.attr( {
-				'href': '#',
-				'title': mw.msg( 'al-problem-description' )
-			} )
-			.click( onClick ),
-		')'
+	$( 'fieldset h3' ).first().before(
+		$( '<h3>' ).text( mw.msg( 'al-header' ) ),
+		$( '<p>' ).text( mw.msg( 'al-question' ) )
+			.append(
+				$( '<input>').attr( {
+					'name': 'al-status',
+					'id': 'al-status-correct',
+					'type': 'radio',
+					'value': 'correct'
+				} ).prop( 'checked', true ),
+				$( '<label>').attr( {
+					'for': 'al-status-correct',
+					'title': mw.msg( 'al-correct-description' )
+				} ).text( mw.msg( 'al-yes' ) ),
+				$( '<input>').attr( {
+					'name': 'al-status',
+					'id': 'al-status-incorrect',
+					'type': 'radio',
+					'value': 'incorrect'
+				} ),
+				$( '<label>').attr( {
+					'for': 'al-status-incorrect',
+					'title': mw.msg( 'al-incorrect-description' )
+				} ).text( mw.msg( 'al-no' ) ),
+				' ',
+				$( '<input>').attr( {
+					'type': 'text',
+					'id': 'al-note',
+					'placeholder': mw.msg( 'al-placeholder' ),
+					'size': 50
+				} ),
+				$( '<input>').attr( {
+					'type': 'submit',
+					'value': mw.msg( 'al-submit' ),
+					'id': 'al-submit',
+					'title': mw.msg( 'al-submit-description' )
+				} ).click( onClick )
+			)
 	);
 }
 function markAbuseFilterEntriesByStatus( texts ){
