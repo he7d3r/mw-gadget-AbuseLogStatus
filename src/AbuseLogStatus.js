@@ -21,7 +21,7 @@ mw.messages.set( {
 	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)',
 	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
-	'al-page-edit-error': 'Houve um erro ao tentar editar.',
+	'al-page-edit-error': 'Houve um erro ao tentar editar. Por favor, tente novamente.',
 	'al-log-false-positive': 'Um editor já identificou que este registro foi um falso positivo',
 	'al-log-correct': 'Um editor já identificou que este registro estava correto',
 	'al-header': 'Análise',
@@ -40,12 +40,25 @@ mw.messages.set( {
 var filter, reTemplate, reDetailsPage, revision;
 
 function onClick ( e ){
-	var note,
+	var note, api,
 		$button = $( e.target ),
 		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
 		defineStatus = function ( data ){
 			var template, start,
-				text = data.query.pages[ data.query.pageids[0] ].missing === ''
+				editParams = {
+					action: 'edit',
+					title: mw.msg( 'al-page-title', filter ),
+					summary: mw.msg(
+						'al-summary',
+						revision,
+						falsePositive ? mw.msg( 'al-incorrect' ) : mw.msg( 'al-correct' )
+					),
+					minor: true,
+					watchlist: 'nochange',
+					token: mw.user.tokens.get( 'editToken' )
+				},
+				missing = data.query.pages[ data.query.pageids[0] ].missing === '',
+				text = missing
 					? mw.msg( 'al-empty-page' )
 					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
 			if ( !note ){
@@ -71,32 +84,38 @@ function onClick ( e ){
 					.replace( /^\n+/g, '' )
 					// TODO: remove this temporary hack
 					.replace( /\| *nota *= *,/g, '|nota=' );
-			( new mw.Api() ).post( {
-				action: 'edit',
-				title: mw.msg( 'al-page-title', filter ),
-				text: text,
-				summary: mw.msg(
-					'al-summary',
-					revision,
-					falsePositive ? mw.msg( 'al-incorrect' ) : mw.msg( 'al-correct' )
-				),
-				minor: true,
-				watchlist: 'nochange',
-				token: mw.user.tokens.get( 'editToken' )
-			} )
+			if ( !missing ){
+				editParams.basetimestamp = data.query.pages[ data.query.pageids[0] ].revisions[0].timestamp;
+			}
+			editParams.text = text;
+			api.post( editParams )
 			.done( function( data ) {
 				var link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=0';
 				if ( data.edit && data.edit.result && data.edit.result === 'Success' ) {
-					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), { autoHide: false } );
-					$button.removeAttr('disabled');
+					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
+						autoHide: false,
+						tag: 'status'
+					} );
 				} else {
-					mw.notify( mw.msg( 'al-page-edit-error' ), { autoHide: false } );
+					mw.notify( mw.msg( 'al-page-edit-error' ), {
+						autoHide: false,
+						tag: 'status'
+					} );
 				}
-			} ).always( function(){
+			} )
+			.fail( function(){
+				mw.notify( mw.msg( 'al-page-edit-error' ), {
+					autoHide: false,
+					tag: 'status'
+				} );
+			} )
+			.always( function(){
 				$.removeSpinner( 'af-status-spinner' );
+				$button.removeAttr('disabled');
 			} );
 		},
 		getPageContent = function (){
+			api = new mw.Api();
 			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
 				filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
 				if( filter && filter[1] ){
@@ -105,9 +124,9 @@ function onClick ( e ){
 				}
 			} );
 			$( '#al-submit' ).injectSpinner( 'af-status-spinner' );
-			( new mw.Api() ).get( {
+			api.get( {
 				prop: 'revisions',
-				rvprop: 'content',
+				rvprop: 'content|timestamp',
 				rvlimit: 1,
 				indexpageids: true,
 				titles: mw.msg( 'al-page-title', filter )
@@ -235,7 +254,9 @@ if ( mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog'
 ) {
 	reDetailsPage = /Especial:Registro_de_abusos\/(\d+)$/;
 	if ( mw.config.get( 'wgTitle' ) === 'Registro de abusos' ){
-		$( getVerificationPages );
+		mw.loader.using( [ 'mediawiki.api.edit' ], function(){
+			$( getVerificationPages );
+		});
 	} else {
 		revision = mw.config.get( 'wgPageName' ).match( reDetailsPage );
 		if( revision && revision[1] ){
