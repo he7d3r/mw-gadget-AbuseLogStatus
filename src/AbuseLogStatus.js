@@ -105,7 +105,7 @@ function onClick ( e ){
 				}
 			} )
 			.fail( function( code, details ){
-				mw.notify( mw.msg( 'al-page-edit-error', code, details ), {
+				mw.notify( mw.msg( 'al-page-edit-error', code, details && details.error && details.error.info ), {
 					autoHide: false,
 					tag: 'status'
 				} );
