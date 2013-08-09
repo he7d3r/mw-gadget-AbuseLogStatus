@@ -21,7 +21,8 @@ mw.messages.set( {
 	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)',
 	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
-	'al-page-edit-error': 'Houve um erro ao tentar editar. $1: $2. Por favor, tente novamente.',
+	'al-page-edit-conflict': 'Foi detectado um conflito entre edições. Por favor, tente novamente.',
+	'al-page-edit-error': 'Houve um erro ao tentar editar ($1). Por favor, tente novamente.',
 	'al-page-edit-error-unknown': 'Houve um erro desconhecido ao tentar editar. Por favor, tente novamente.',
 	'al-log-false-positive': 'Um editor já identificou que este registro foi um falso positivo',
 	'al-log-correct': 'Um editor já identificou que este registro estava correto',
@@ -104,8 +105,15 @@ function onClick ( e ){
 					} );
 				}
 			} )
-			.fail( function( code, details ){
-				mw.notify( mw.msg( 'al-page-edit-error', code, details && details.error && details.error.info ), {
+			.fail( function( code ){
+				if( code === 'editconflict' ){
+					mw.notify( mw.msg( 'al-page-edit-conflict' ), {
+						autoHide: false,
+						tag: 'status'
+					} );
+					return;
+				}
+				mw.notify( mw.msg( 'al-page-edit-error', code ), {
 					autoHide: false,
 					tag: 'status'
 				} );
