@@ -85,7 +85,7 @@ function onClick ( e ){
 					.join( '\n' )
 					.replace( /^\n+/g, '' )
 					// TODO: remove this temporary hack
-					.replace( /\n\* +\{\{Ação/g, '\n*{' + '{Ação' );
+					.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' );
 			if ( !missing ){
 				editParams.basetimestamp = data.query.pages[ data.query.pageids[0] ].revisions[0].timestamp;
 			}
