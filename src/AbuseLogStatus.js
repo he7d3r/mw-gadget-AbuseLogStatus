@@ -11,13 +11,13 @@
 
 /* Translatable strings */
 mw.messages.set( {
-	'al-page-title': 'Wikipédia:Filtro_de_edições/Falsos_positivos/Filtro_$1',
+	'al-page-title': 'Wikipédia:Filtro_de_edições/Análise/Filtro_$1',
 	'al-summary': 'Status do registro [[Especial:Registro de abusos/$1|$1]]: $2' +
 		' (edição feita com [[Special:PermaLink/36600646#Script (experimental)|um script]])',
-	'al-correct-template': '*{{Ação|$1}}\n',
-	'al-problem-template': '*{{Ação|$1|erro=sim}}\n',
-	'al-correct-template-with-note': '*{{Ação|$1|nota=$2}}\n',
-	'al-problem-template-with-note': '*{{Ação|$1|erro=sim|nota=$2}}\n',
+	'al-correct-template': '*{' + '{Ação|$1}}\n',
+	'al-problem-template': '*{' + '{Ação|$1|erro=sim}}\n',
+	'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
+	'al-problem-template-with-note': '*{' + '{Ação|$1|erro=sim|nota=$2}}\n',
 	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)',
 	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
@@ -85,7 +85,7 @@ function onClick ( e ){
 					.join( '\n' )
 					.replace( /^\n+/g, '' )
 					// TODO: remove this temporary hack
-					.replace( /\n\* +\{\{Ação/g, '\n*{{Ação' );
+					.replace( /\n\* +\{\{Ação/g, '\n*{' + '{Ação' );
 			if ( !missing ){
 				editParams.basetimestamp = data.query.pages[ data.query.pageids[0] ].revisions[0].timestamp;
 			}
