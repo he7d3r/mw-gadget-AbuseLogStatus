@@ -28,6 +28,7 @@ mw.messages.set( {
 	'al-log-correct': 'Um editor já identificou que este registro estava correto',
 	'al-header': 'Análise',
 	'al-question': 'Este filtro deveria ter detectado esta ação?',
+	'al-specific-question': 'É correto classificar esta ação como "$1" por meio deste filtro?',
 	'al-correct-description': 'Marcar este registro como correto',
 	'al-yes': 'Sim',
 	'al-correct': 'Correto',
@@ -151,11 +152,18 @@ function onClick ( e ){
 }
 
 function addAbuseFilterStatusLinks(){
+	var desc = $( 'fieldset' ).find( 'p:first span:first' )
+		.text().match( /Descrição do filtro: (.+?) \(/ );
 	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ) );
 	$( 'fieldset h3' ).first().before(
 		$( '<h3>' ).text( mw.msg( 'al-header' ) ),
-		$( '<p>' ).text( mw.msg( 'al-question' ) )
+		$( '<p>' ).text(
+				desc && desc[1] ?
+					mw.msg( 'al-specific-question', desc[1] ) :
+					mw.msg( 'al-question' )
+			)
 			.append(
+				$( '<br />'),
 				$( '<input>').attr( {
 					'name': 'al-status',
 					'id': 'al-status-correct',
