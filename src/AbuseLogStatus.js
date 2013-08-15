@@ -19,6 +19,7 @@ mw.messages.set( {
 	'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '*{' + '{Ação|$1|erro=sim|nota=$2}}\n',
 	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}\\d]*($1)[^\\}\\d]*?\\}\\} *(?:\\n|$)',
+	'al-analysis-page-regex': '^Wikipédia:Filtro de edições\\/Análise\\/Filtro (\\d+)$',
 	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
 	'al-page-edit-conflict': 'Foi detectado um conflito entre edições. Por favor, tente novamente.',
@@ -40,10 +41,10 @@ mw.messages.set( {
 	'al-submit-description': 'Enviar a sua análise (editará automaticamente a página apropriada)'
 } );
 
-var filter, reTemplate, reDetailsPage, revision;
+var api, filter, reTemplate, reDetailsPage, reFilterLink, revision;
 
 function onClick ( e ){
-	var note, api,
+	var note,
 		$button = $( e.target ),
 		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
 		defineStatus = function ( data ){
@@ -125,7 +126,6 @@ function onClick ( e ){
 			} );
 		},
 		getPageContent = function (){
-			api = new mw.Api();
 			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
 				filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
 				if( filter && filter[1] ){
@@ -148,6 +148,7 @@ function onClick ( e ){
 		};
 	$button.attr( 'disabled', 'disabled' );
 	note = $( '#al-note' ).val();
+
 	mw.loader.using( [ 'mediawiki.api.edit', 'jquery.spinner' ], getPageContent );
 }
 
@@ -201,7 +202,6 @@ function addAbuseFilterStatusLinks(){
 	);
 }
 function markAbuseFilterEntriesByStatus( texts ){
-	var reFilterLink = /\/Especial:Filtro_de_abusos\/(\d+)/;
 	mw.util.addCSS(
 		'.af-log-false-positive { background: #FDD; } ' +
 		'.af-log-correct { background: #DFD; }'
@@ -211,7 +211,7 @@ function markAbuseFilterEntriesByStatus( texts ){
 		$currentLi.find( 'a' ).each( function(){
 			var href = $( this ).attr( 'href' ),
 				match = href.match( reFilterLink );
-			if( match && match[1] ){
+			if( match ){
 				filter = match[1];
 				if( !texts[ filter ] ){
 					return false;
@@ -225,7 +225,7 @@ function markAbuseFilterEntriesByStatus( texts ){
 			if( log && filter ){
 				reTemplate = new RegExp( mw.msg( 'al-template-regex', log ) );
 				match = texts[ filter ].match( reTemplate );
-				if( match && match[0] ){
+				if( match ){
 					// Highlight log entries already checked
 					if( /\| *erro *= *sim/.test( match[0] ) ){
 						// add af-false-positive class
@@ -240,29 +240,67 @@ function markAbuseFilterEntriesByStatus( texts ){
 				}
 				return false;
 			}
-		} ).first().attr( 'href' );
+		} );
 	} );
 }
 
 function getVerificationPages(){
-	var statusTexts = {};
-	( new mw.Api() ).get( {
+	var statusTexts = {}, pageids;
+	api.get( {
 		action: 'query',
-		prop: 'revisions',
-		rvprop: 'content',
-		generator: 'embeddedin',
-		geititle: 'Predefinição:Lista de falsos positivos (cabeçalho)',
-		geinamespace: 4,
-		geilimit: 'max'
+		list: 'embeddedin',
+		eititle: 'Predefinição:Lista de falsos positivos (cabeçalho)',
+		einamespace: 4,
+		eifilterredir: 'nonredirects',
+		eilimit: 'max'
 	} )
 	.done( function ( data ) {
-		$.each( data.query.pages, function(id){
-			var filter = data.query.pages[ id ].title.match( /\d+$/ );
-			if( filter && filter[0] ){
-				statusTexts[ filter[0] ] = data.query.pages[ id ].revisions[0]['*'];
-			}
+		var filterPageToGet = {}, i, filter,
+			reAnalysisPage = new RegExp( mw.msg( 'al-analysis-page-regex' ) );
+		$( '#mw-content-text' ).find( 'li' ).each( function(){
+			$( this ).find( 'a' ).each( function(){
+				var filter = $( this ).attr( 'href' ).match( reFilterLink );
+				if( filter && ! filterPageToGet[ filter[1] ] ){
+					filterPageToGet[ filter[1] ] = true;
+					return false;
+				}
+			} );
 		} );
-		markAbuseFilterEntriesByStatus( statusTexts );
+		for ( i = 0; i < data.query.embeddedin.length; i++ ){
+			filter = data.query.embeddedin[i].title.match( reAnalysisPage );
+			if ( filter && filterPageToGet[ filter[1] ] ){
+				filterPageToGet[ filter[1] ] = data.query.embeddedin[i].pageid;
+			}
+		}
+		pageids = $.map( filterPageToGet, function( id ){
+			return id !== true ? id : null;
+		} ).join( '|' );
+		if ( pageids === '' ){
+			return;
+		}
+		api.get( {
+			action: 'query',
+			prop: 'revisions',
+			rvprop: 'content',
+			pageids: pageids
+			// generator: 'embeddedin',
+			// geititle: 'Predefinição:Lista de falsos positivos (cabeçalho)',
+			// geinamespace: 4,
+			// geilimit: 'max'
+		} )
+		.done( function ( data ) {
+			$.each( data.query.pages, function( id ){
+				var filter,
+					pg = data.query.pages[ id ];
+				if ( pg.missing !== '' ){
+					filter = pg.title.match( reAnalysisPage );
+					if( filter && filter[1] ){
+						statusTexts[ filter[1] ] = pg.revisions[0]['*'];
+					}
+				}
+			} );
+			markAbuseFilterEntriesByStatus( statusTexts );
+		} );
 	} );
 }
 
@@ -270,17 +308,19 @@ if ( mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog'
 	&& mw.config.get( 'wgDBname' ) === 'ptwiki'
 ) {
 	reDetailsPage = /Especial:Registro_de_abusos\/(\d+)$/;
-	if ( mw.config.get( 'wgTitle' ) === 'Registro de abusos' ){
-		mw.loader.using( [ 'mediawiki.api.edit' ], function(){
+	reFilterLink = /^\/wiki\/Especial:Filtro_de_abusos\/(\d+)$/;
+	mw.loader.using( 'mediawiki.api', function(){
+		api = new mw.Api();
+		if ( mw.config.get( 'wgTitle' ) === 'Registro de abusos' ){
 			$( getVerificationPages );
-		});
-	} else {
-		revision = mw.config.get( 'wgPageName' ).match( reDetailsPage );
-		if( revision && revision[1] ){
-			revision = revision[1];
-			$( addAbuseFilterStatusLinks );
+		} else {
+			revision = mw.config.get( 'wgPageName' ).match( reDetailsPage );
+			if( revision && revision[1] ){
+				revision = revision[1];
+				$( addAbuseFilterStatusLinks );
+			}
 		}
-	}
+	} );
 }
 
 }( mediaWiki, jQuery ) );
