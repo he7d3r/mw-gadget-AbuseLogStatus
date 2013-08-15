@@ -28,7 +28,7 @@ mw.messages.set( {
 	'al-log-correct': 'Um editor já identificou que este registro estava correto',
 	'al-header': 'Análise',
 	'al-question': 'Este filtro deveria ter detectado esta ação?',
-	'al-specific-question': 'É correto classificar esta ação como "$1" por meio deste filtro?',
+	'al-specific-question': 'Foi correto classificar esta ação como "$1"?',
 	'al-correct-description': 'Marcar este registro como correto',
 	'al-yes': 'Sim',
 	'al-correct': 'Correto',
