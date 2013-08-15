@@ -70,6 +70,7 @@ function onClick ( e ){
 					? mw.msg( 'al-problem-template', revision )
 					: mw.msg( 'al-correct-template', revision );
 			} else {
+				note = note.replace( /\|/g, '{{!}}' );
 				template = falsePositive
 					? mw.msg( 'al-problem-template-with-note', revision, note )
 					: mw.msg( 'al-correct-template-with-note', revision, note );
