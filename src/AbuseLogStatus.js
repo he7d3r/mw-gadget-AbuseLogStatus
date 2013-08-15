@@ -12,13 +12,13 @@
 /* Translatable strings */
 mw.messages.set( {
 	'al-page-title': 'Wikipédia:Filtro_de_edições/Análise/Filtro_$1',
-	'al-summary': 'Status do registro [[Especial:Registro de abusos/$1|$1]]: $2' +
-		' (edição feita com [[Special:PermaLink/36600646#Script (experimental)|um script]])',
+	'al-summary': 'Status do registro [[Special:AbuseLog/$1|$1]]: $2' +
+		' (edição feita com [[Special:PermaLink/36666969#Scripts|um script]])',
 	'al-correct-template': '*{' + '{Ação|$1}}\n',
 	'al-problem-template': '*{' + '{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '*{' + '{Ação|$1|erro=sim|nota=$2}}\n',
-	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}]*($1)[^\\}]*?\\}\\} *(?:\\n|$)',
+	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}\\d]*($1)[^\\}\\d]*?\\}\\} *(?:\\n|$)',
 	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
 	'al-page-edit-conflict': 'Foi detectado um conflito entre edições. Por favor, tente novamente.',
