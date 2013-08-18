@@ -18,7 +18,7 @@ mw.messages.set( {
 	'al-problem-template': '*{' + '{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '*{' + '{Ação|$1|erro=sim|nota=$2}}\n',
-	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|[^\\}\\d]*($1)[^\\}\\d]*?\\}\\} *(?:\\n|$)',
+	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|(?:.*?\\D)?($1)(?:\\D.*?)?\\}\\} *(?:\\n|$)',
 	'al-analysis-page-regex': '^Wikipédia:Filtro de edições\\/Análise\\/Filtro (\\d+)$',
 	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
@@ -75,11 +75,7 @@ function onClick ( e ){
 					? mw.msg( 'al-problem-template-with-note', revision, note )
 					: mw.msg( 'al-correct-template-with-note', revision, note );
 			}
-			if( !reTemplate.test( text ) ) {
-				text += '\n' + template;
-			} else {
-				text = text.replace( reTemplate, template );
-			}
+			text = text.replace( reTemplate, '' ) + '\n' + template;
 			start = text.search( /^.*\{\{[Aa]ção/m );
 			text = text.substr( 0, start ).replace( /\n+$/g, '\n\n' ) +
 				text.substr( start )
@@ -87,8 +83,9 @@ function onClick ( e ){
 					.sort()
 					.join( '\n' )
 					.replace( /^\n+/g, '' )
-					// TODO: remove this temporary hack
-					.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' );
+					// TODO: remove these temporary hacks
+					.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' )
+					.replace( /(\* *\{\{ *Ação *\| *(\d+)\D.+\n)(\* *\{\{ *Ação *\| *\2\D.+\n)+/g, '$1' );
 			if ( !missing ){
 				editParams.basetimestamp = data.query.pages[ data.query.pageids[0] ].revisions[0].timestamp;
 			}
@@ -156,7 +153,7 @@ function onClick ( e ){
 function addAbuseFilterStatusLinks(){
 	var desc = $( 'fieldset' ).find( 'p:first span:first' )
 		.text().match( /Descrição do filtro: (.+?) \(/ );
-	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ) );
+	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ), 'g' );
 	$( 'fieldset h3' ).first().before(
 		$( '<h3>' ).text( mw.msg( 'al-header' ) ),
 		$( '<p>' ).text(
@@ -224,7 +221,7 @@ function markAbuseFilterEntriesByStatus( texts ){
 				}
 			}
 			if( log && filter ){
-				reTemplate = new RegExp( mw.msg( 'al-template-regex', log ) );
+				reTemplate = new RegExp( mw.msg( 'al-template-regex', log ), 'g' );
 				match = texts[ filter ].match( reTemplate );
 				if( match ){
 					// Highlight log entries already checked
