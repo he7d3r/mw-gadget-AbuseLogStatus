@@ -63,17 +63,17 @@ function onClick ( e ){
 				},
 				missing = data.query.pages[ data.query.pageids[0] ].missing === '',
 				text = missing
-					? mw.msg( 'al-empty-page' )
+					? mw.message( 'al-empty-page' ).plain()
 					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
 			if ( !note ){
 				template = falsePositive
-					? mw.msg( 'al-problem-template', revision )
-					: mw.msg( 'al-correct-template', revision );
+					? mw.message( 'al-problem-template', revision ).plain()
+					: mw.message( 'al-correct-template', revision ).plain();
 			} else {
 				note = note.replace( /\|/g, '{{!}}' );
 				template = falsePositive
-					? mw.msg( 'al-problem-template-with-note', revision, note )
-					: mw.msg( 'al-correct-template-with-note', revision, note );
+					? mw.message( 'al-problem-template-with-note', revision, note ).plain()
+					: mw.message( 'al-correct-template-with-note', revision, note ).plain();
 			}
 			text = text.replace( reTemplate, '' ) + '\n' + template;
 			start = text.search( /^.*\{\{[Aa]ção/m );
@@ -153,7 +153,7 @@ function onClick ( e ){
 function addAbuseFilterStatusLinks(){
 	var desc = $( 'fieldset' ).find( 'p:first span:first' )
 		.text().match( /Descrição do filtro: (.+?) \(/ );
-	reTemplate = new RegExp( mw.msg( 'al-template-regex', revision ), 'g' );
+	reTemplate = new RegExp( mw.message( 'al-template-regex', revision ).plain(), 'g' );
 	$( 'fieldset h3' ).first().before(
 		$( '<h3>' ).text( mw.msg( 'al-header' ) ),
 		$( '<p>' ).text(
@@ -221,7 +221,7 @@ function markAbuseFilterEntriesByStatus( texts ){
 				}
 			}
 			if( log && filter ){
-				reTemplate = new RegExp( mw.msg( 'al-template-regex', log ), 'g' );
+				reTemplate = new RegExp( mw.message( 'al-template-regex', log ).plain(), 'g' );
 				match = texts[ filter ].match( reTemplate );
 				if( match ){
 					// Highlight log entries already checked
@@ -254,7 +254,7 @@ function getVerificationPages(){
 	} )
 	.done( function ( data ) {
 		var filterPageToGet = {}, i, filter,
-			reAnalysisPage = new RegExp( mw.msg( 'al-analysis-page-regex' ) );
+			reAnalysisPage = new RegExp( mw.message( 'al-analysis-page-regex' ).plain() );
 		$( '#mw-content-text' ).find( 'li' ).each( function(){
 			$( this ).find( 'a' ).each( function(){
 				var filter = $( this ).attr( 'href' ).match( reFilterLink );
