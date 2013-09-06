@@ -28,6 +28,8 @@ mw.messages.set( {
 	'al-page-edit-error-unknown': 'Houve um erro desconhecido ao tentar editar. Por favor, tente novamente.',
 	'al-log-false-positive': 'Um editor já identificou que este registro foi um falso positivo',
 	'al-log-correct': 'Um editor já identificou que este registro estava correto',
+	'al-log-false-positive-note': 'Um editor já identificou que este registro foi um falso positivo: $1',
+	'al-log-correct-note': 'Um editor já identificou que este registro estava correto: $1',
 	'al-header': 'Análise',
 	'al-question': 'Este filtro deveria ter detectado esta ação?',
 	'al-specific-question': 'Foi correto classificar esta ação como "$1"?',
@@ -209,7 +211,8 @@ function markAbuseFilterEntriesByStatus( texts ){
 		var filter, log, $currentLi = $( this );
 		$currentLi.find( 'a' ).each( function(){
 			var href = $( this ).attr( 'href' ),
-				match = href.match( reFilterLink );
+				match = href.match( reFilterLink ),
+				note;
 			if( match ){
 				filter = match[1];
 				if( !texts[ filter ] ){
@@ -225,16 +228,25 @@ function markAbuseFilterEntriesByStatus( texts ){
 				reTemplate = new RegExp( mw.message( 'al-template-regex', log ).plain(), 'g' );
 				match = texts[ filter ].match( reTemplate );
 				if( match ){
+					note = match[0].match( /nota *= *(.+?) *(?:\||\}\} *(?:\n|$))/ );
 					// Highlight log entries already checked
 					if( /\| *erro *= *sim/.test( match[0] ) ){
 						// add af-false-positive class
 						$currentLi
 							.addClass( 'af-log-false-positive' )
-							.attr( 'title', mw.msg( 'al-log-false-positive' ) );
+							.attr(
+								'title',
+								note ? mw.msg( 'al-log-false-positive-note', mw.html.escape( note[1] ) )
+									: mw.msg( 'al-log-false-positive' )
+							);
 					} else {
 						$currentLi
 							.addClass( 'af-log-correct' )
-							.attr( 'title', mw.msg( 'al-log-correct' ) );
+							.attr(
+								'title',
+								note ? mw.msg( 'al-log-correct-note', mw.html.escape( note[1] ) )
+									: mw.msg( 'al-log-correct' )
+							);
 					}
 				}
 				return false;
