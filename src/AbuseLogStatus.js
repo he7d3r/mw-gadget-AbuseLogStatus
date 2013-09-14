@@ -44,7 +44,7 @@ mw.messages.set( {
 	'al-submit-description': 'Enviar a sua análise (editará automaticamente a página apropriada)'
 } );
 
-var api, filter, reTemplate, reDetailsPage, reFilterLink, revision;
+var api, filter, reTemplate, reDetailsPage, reFilterLink, revision, deferredRevContent;
 
 function onClick ( e ){
 	var note,
@@ -55,6 +55,7 @@ function onClick ( e ){
 				editParams = {
 					action: 'edit',
 					title: mw.msg( 'al-page-title', filter ),
+					// section: 0,
 					summary: mw.msg(
 						'al-summary',
 						revision,
@@ -127,22 +128,8 @@ function onClick ( e ){
 			} );
 		},
 		getPageContent = function (){
-			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
-				filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
-				if( filter && filter[1] ){
-					filter = filter[1];
-					return false;
-				}
-			} );
 			$( '#al-submit' ).injectSpinner( 'af-status-spinner' );
-			api.get( {
-				prop: 'revisions',
-				rvprop: 'content|timestamp',
-				rvlimit: 1,
-				indexpageids: true,
-				titles: mw.msg( 'al-page-title', filter )
-			} )
-			.done( defineStatus )
+			deferredRevContent.done( defineStatus )
 			.fail( function () {
 				$.removeSpinner( 'af-status-spinner' );
 			} );
@@ -157,6 +144,22 @@ function addAbuseFilterStatusLinks(){
 	var desc = $( 'fieldset' ).find( 'p:first span:first' )
 		.text().match( /Descrição do filtro: (.+?) \(/ );
 	reTemplate = new RegExp( mw.message( 'al-template-regex', revision ).plain(), 'g' );
+	
+	$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
+		filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
+		if( filter && filter[1] ){
+			filter = filter[1];
+			return false;
+		}
+	} );
+	deferredRevContent = api.get( {
+		prop: 'revisions',
+		rvprop: 'content|timestamp',
+		// section: 0,
+		rvlimit: 1,
+		indexpageids: true,
+		titles: mw.msg( 'al-page-title', filter )
+	} );
 	$( 'fieldset h3' ).first().before(
 		$( '<h3>' ).text( mw.msg( 'al-header' ) ),
 		$( '<p>' ).text(
