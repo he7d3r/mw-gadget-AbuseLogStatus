@@ -44,7 +44,7 @@ mw.messages.set( {
 	'al-submit-description': 'Enviar a sua análise (editará automaticamente a página apropriada)'
 } );
 
-var api, filter, reTemplate, reDetailsPage, reFilterLink, revision, deferredRevContent;
+var api, filter, reTemplate, reDetailsPage, reFilterLink, revision;
 
 function onClick ( e ){
 	var note,
@@ -65,10 +65,11 @@ function onClick ( e ){
 					watchlist: 'nochange',
 					token: mw.user.tokens.get( 'editToken' )
 				},
-				missing = data.query.pages[ data.query.pageids[0] ].missing === '',
-				text = missing
+				page = data.query.pages[ data.query.pageids[0] ],
+				isMissing = page.missing === '',
+				text = isMissing
 					? mw.message( 'al-empty-page' ).plain()
-					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
+					: page.revisions[0]['*'];
 			if ( note ){
 				note = note.replace( /\|/g, '{{!}}' );
 				template = falsePositive
@@ -90,8 +91,9 @@ function onClick ( e ){
 					// TODO: remove these temporary hacks
 					.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' )
 					.replace( /(\* *\{\{ *Ação *\| *(\d+)\D.+\n)(\* *\{\{ *Ação *\| *\2\D.+\n)+/g, '$1' );
-			if ( !missing ){
-				editParams.basetimestamp = data.query.pages[ data.query.pageids[0] ].revisions[0].timestamp;
+			if ( !isMissing ){
+				editParams.basetimestamp = page.revisions[0].timestamp;
+				editParams.starttimestamp = page.revisions[0].starttimestamp;
 			}
 			editParams.text = text;
 			api.post( editParams )
@@ -130,8 +132,24 @@ function onClick ( e ){
 			} );
 		},
 		getPageContent = function (){
+			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
+				filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
+				if( filter && filter[1] ){
+					filter = filter[1];
+					return false;
+				}
+			} );
 			$( '#al-submit' ).injectSpinner( 'af-status-spinner' );
-			deferredRevContent.done( defineStatus )
+			api.get( {
+				prop: 'info|revisions',
+				rvprop: 'content|timestamp',
+				intoken: 'edit',
+				// section: 0,
+				rvlimit: 1,
+				indexpageids: true,
+				titles: mw.msg( 'al-page-title', filter )
+			} )
+			.done( defineStatus )
 			.fail( function () {
 				$.removeSpinner( 'af-status-spinner' );
 			} );
@@ -151,22 +169,6 @@ function addAbuseFilterStatusLinks(){
 	var desc = $( 'fieldset' ).find( 'p:first span:first' )
 		.text().match( /Descrição do filtro: (.+?) \(/ );
 	reTemplate = new RegExp( mw.message( 'al-template-regex', revision ).plain(), 'g' );
-	
-	$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
-		filter = $( this ).attr( 'href' ).match( /Especial:Filtro_de_abusos\/(\d+)$/ );
-		if( filter && filter[1] ){
-			filter = filter[1];
-			return false;
-		}
-	} );
-	deferredRevContent = api.get( {
-		prop: 'revisions',
-		rvprop: 'content|timestamp',
-		// section: 0,
-		rvlimit: 1,
-		indexpageids: true,
-		titles: mw.msg( 'al-page-title', filter )
-	} );
 	$( 'fieldset h3' ).first().before(
 		$( '<h3>' ).text( mw.msg( 'al-header' ) ),
 		$( '<p>' ).text(
