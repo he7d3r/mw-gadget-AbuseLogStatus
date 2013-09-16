@@ -69,15 +69,15 @@ function onClick ( e ){
 				text = missing
 					? mw.message( 'al-empty-page' ).plain()
 					: data.query.pages[ data.query.pageids[0] ].revisions[0]['*'];
-			if ( !note ){
-				template = falsePositive
-					? mw.message( 'al-problem-template', revision ).plain()
-					: mw.message( 'al-correct-template', revision ).plain();
-			} else {
+			if ( note ){
 				note = note.replace( /\|/g, '{{!}}' );
 				template = falsePositive
 					? mw.message( 'al-problem-template-with-note', revision, note ).plain()
 					: mw.message( 'al-correct-template-with-note', revision, note ).plain();
+			} else {
+				template = falsePositive
+					? mw.message( 'al-problem-template', revision ).plain()
+					: mw.message( 'al-correct-template', revision ).plain();
 			}
 			text = text.replace( reTemplate, '' ) + '\n' + template;
 			start = text.search( /^.*\{\{[Aa]ção/m );
@@ -96,8 +96,10 @@ function onClick ( e ){
 			editParams.text = text;
 			api.post( editParams )
 			.done( function( data ) {
-				var link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=0';
-				if ( data.edit && data.edit.result && data.edit.result === 'Success' ) {
+				var edit = data.edit,
+					link;
+				if ( edit && edit.result && edit.result === 'Success' ) {
+					link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=' + edit.newrevid;
 					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
 						autoHide: false,
 						tag: 'status'
@@ -137,7 +139,12 @@ function onClick ( e ){
 	$button.attr( 'disabled', 'disabled' );
 	note = $( '#al-note' ).val();
 
-	mw.loader.using( [ 'mediawiki.api.edit', 'jquery.spinner' ], getPageContent );
+	mw.loader.using( [
+		'mediawiki.api.edit',
+		'jquery.spinner',
+		'mediawiki.notify',
+		'mediawiki.notification'
+	], getPageContent );
 }
 
 function addAbuseFilterStatusLinks(){
