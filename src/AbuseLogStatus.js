@@ -46,9 +46,8 @@ mw.messages.set( {
 
 var api, filter, reTemplate, reDetailsPage, reFilterLink, revision;
 
-function onClick ( e ){
+function onClick (){
 	var note,
-		$button = $( e.target ),
 		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
 		defineStatus = function ( data ){
 			var template, start,
@@ -101,7 +100,8 @@ function onClick ( e ){
 				var edit = data.edit,
 					link;
 				if ( edit && edit.result && edit.result === 'Success' ) {
-					link = mw.util.wikiGetlink( mw.msg( 'al-page-title', filter ) ) + '?diff=' + edit.newrevid;
+					link = mw.util.wikiGetlink( edit.title ) +
+						'?diff=' + edit.newrevid;
 					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
 						autoHide: false,
 						tag: 'status'
@@ -128,7 +128,7 @@ function onClick ( e ){
 			} )
 			.always( function(){
 				$.removeSpinner( 'af-status-spinner' );
-				$button.removeAttr('disabled');
+				$( '#al-submit' ).removeAttr('disabled');
 			} );
 		},
 		getPageContent = function (){
@@ -154,7 +154,7 @@ function onClick ( e ){
 				$.removeSpinner( 'af-status-spinner' );
 			} );
 		};
-	$button.attr( 'disabled', 'disabled' );
+	$( '#al-submit' ).attr( 'disabled', 'disabled' );
 	note = $( '#al-note' ).val();
 
 	mw.loader.using( [
