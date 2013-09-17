@@ -21,7 +21,7 @@ mw.messages.set( {
 	// Keep this synced with the regex from [[User:Helder.wiki/Tools/AbuseFilterStats.js]]
 	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|(?:.*?\\D)?($1)(?:\\D.*?)?\\}\\} *(?:\\n|$)',
 	'al-analysis-page-regex': '^Wikipédia:Filtro de edições\\/Análise\\/Filtro (\\d+)$',
-	'al-empty-page': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
+	'al-page-header': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
 	'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
 	'al-page-edit-conflict': 'Foi detectado um conflito entre edições. Por favor, tente novamente.',
 	'al-page-edit-error': 'Houve um erro ao tentar editar ($1). Por favor, tente novamente.',
@@ -46,6 +46,44 @@ mw.messages.set( {
 
 var api, filter, reTemplate, reDetailsPage, reFilterLink, revision;
 
+function doEdit ( params ){
+	api.post( params )
+	.done( function( data ) {
+		var edit = data.edit,
+			link;
+		if ( edit && edit.result && edit.result === 'Success' ) {
+			link = mw.util.wikiGetlink( edit.title ) +
+				'?diff=' + edit.newrevid;
+			mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
+				autoHide: false,
+				tag: 'status'
+			} );
+		} else {
+			mw.notify( mw.msg( 'al-page-edit-error-unknown' ), {
+				autoHide: false,
+				tag: 'status'
+			} );
+		}
+	} )
+	.fail( function( code ){
+		if( code === 'editconflict' ){
+			mw.notify( mw.msg( 'al-page-edit-conflict' ), {
+				autoHide: false,
+				tag: 'status'
+			} );
+			return;
+		}
+		mw.notify( mw.msg( 'al-page-edit-error', code ), {
+			autoHide: false,
+			tag: 'status'
+		} );
+	} )
+	.always( function(){
+		$.removeSpinner( 'af-status-spinner' );
+		$( '#al-submit' ).removeAttr('disabled');
+	} );
+}
+
 function onClick (){
 	var note,
 		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
@@ -67,7 +105,7 @@ function onClick (){
 				page = data.query.pages[ data.query.pageids[0] ],
 				isMissing = page.missing === '',
 				text = isMissing
-					? mw.message( 'al-empty-page' ).plain()
+					? mw.message( 'al-page-header' ).plain()
 					: page.revisions[0]['*'];
 			if ( note ){
 				note = note.replace( /\|/g, '{{!}}' );
@@ -95,41 +133,7 @@ function onClick (){
 				editParams.starttimestamp = page.revisions[0].starttimestamp;
 			}
 			editParams.text = text;
-			api.post( editParams )
-			.done( function( data ) {
-				var edit = data.edit,
-					link;
-				if ( edit && edit.result && edit.result === 'Success' ) {
-					link = mw.util.wikiGetlink( edit.title ) +
-						'?diff=' + edit.newrevid;
-					mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
-						autoHide: false,
-						tag: 'status'
-					} );
-				} else {
-					mw.notify( mw.msg( 'al-page-edit-error-unknown' ), {
-						autoHide: false,
-						tag: 'status'
-					} );
-				}
-			} )
-			.fail( function( code ){
-				if( code === 'editconflict' ){
-					mw.notify( mw.msg( 'al-page-edit-conflict' ), {
-						autoHide: false,
-						tag: 'status'
-					} );
-					return;
-				}
-				mw.notify( mw.msg( 'al-page-edit-error', code ), {
-					autoHide: false,
-					tag: 'status'
-				} );
-			} )
-			.always( function(){
-				$.removeSpinner( 'af-status-spinner' );
-				$( '#al-submit' ).removeAttr('disabled');
-			} );
+			doEdit( editParams );
 		},
 		getPageContent = function (){
 			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
