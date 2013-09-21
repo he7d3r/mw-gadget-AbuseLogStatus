@@ -88,7 +88,7 @@ function onClick (){
 	var note,
 		falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
 		defineStatus = function ( data ){
-			var template, start,
+			var template, start, text,
 				editParams = {
 					action: 'edit',
 					title: mw.msg( 'al-page-title', filter ),
@@ -103,10 +103,7 @@ function onClick (){
 					token: mw.user.tokens.get( 'editToken' )
 				},
 				page = data.query.pages[ data.query.pageids[0] ],
-				isMissing = page.missing === '',
-				text = isMissing
-					? mw.message( 'al-page-header' ).plain()
-					: page.revisions[0]['*'];
+				isMissing = page.missing === '';
 			if ( note ){
 				note = note.replace( /\|/g, '{{!}}' );
 				template = falsePositive
@@ -117,9 +114,15 @@ function onClick (){
 					? mw.message( 'al-problem-template', revision ).plain()
 					: mw.message( 'al-correct-template', revision ).plain();
 			}
-			text = text.replace( reTemplate, '' ) + '\n' + template;
-			start = text.search( /^.*\{\{[Aa]ção/m );
-			text = text.substr( 0, start ).replace( /\n+$/g, '\n\n' ) +
+			if ( isMissing ){
+				text = mw.message( 'al-page-header' ).plain();
+				editParams.text = text;
+				doEdit( editParams );
+			} else {
+				text = page.revisions[0]['*'];
+				text = text.replace( reTemplate, '' ) + '\n' + template;
+				start = text.search( /^.*\{\{[Aa]ção/m );
+				text = text.substr( 0, start ).replace( /\n+$/g, '\n\n' ) +
 				text.substr( start )
 					.split( '\n' )
 					.sort()
@@ -128,12 +131,11 @@ function onClick (){
 					// TODO: remove these temporary hacks
 					.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' )
 					.replace( /(\* *\{\{ *Ação *\| *(\d+)\D.+\n)(\* *\{\{ *Ação *\| *\2\D.+\n)+/g, '$1' );
-			if ( !isMissing ){
 				editParams.basetimestamp = page.revisions[0].timestamp;
 				editParams.starttimestamp = page.revisions[0].starttimestamp;
+				editParams.text = text;
+				doEdit( editParams );
 			}
-			editParams.text = text;
-			doEdit( editParams );
 		},
 		getPageContent = function (){
 			$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function(){
