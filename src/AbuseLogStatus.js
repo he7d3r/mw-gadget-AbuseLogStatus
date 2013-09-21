@@ -80,7 +80,7 @@ function doEdit ( params ){
 	} )
 	.always( function(){
 		$.removeSpinner( 'af-status-spinner' );
-		$( '#al-submit' ).removeAttr('disabled');
+		$( '#al-submit' ).removeAttr( 'disabled' );
 	} );
 }
 
@@ -183,35 +183,35 @@ function addAbuseFilterStatusLinks(){
 					mw.msg( 'al-question' )
 			)
 			.append(
-				$( '<br />'),
-				$( '<input>').attr( {
+				$( '<br />' ),
+				$( '<input>' ).attr( {
 					'name': 'al-status',
 					'id': 'al-status-correct',
 					'type': 'radio',
 					'value': 'correct'
 				} ).prop( 'checked', true ),
-				$( '<label>').attr( {
+				$( '<label>' ).attr( {
 					'for': 'al-status-correct',
 					'title': mw.msg( 'al-correct-description' )
 				} ).text( mw.msg( 'al-yes' ) ),
-				$( '<input>').attr( {
+				$( '<input>' ).attr( {
 					'name': 'al-status',
 					'id': 'al-status-incorrect',
 					'type': 'radio',
 					'value': 'incorrect'
 				} ),
-				$( '<label>').attr( {
+				$( '<label>' ).attr( {
 					'for': 'al-status-incorrect',
 					'title': mw.msg( 'al-incorrect-description' )
 				} ).text( mw.msg( 'al-no' ) ),
 				' ',
-				$( '<input>').attr( {
+				$( '<input>' ).attr( {
 					'type': 'text',
 					'id': 'al-note',
 					'placeholder': mw.msg( 'al-placeholder' ),
 					'size': 50
 				} ),
-				$( '<input>').attr( {
+				$( '<input>' ).attr( {
 					'type': 'submit',
 					'value': mw.msg( 'al-submit' ),
 					'id': 'al-submit',
