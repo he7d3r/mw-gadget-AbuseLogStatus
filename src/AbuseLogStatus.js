@@ -123,14 +123,14 @@ function onClick (){
 				text = text.replace( reTemplate, '' ) + '\n' + template;
 				start = text.search( /^.*\{\{[Aa]ção/m );
 				text = text.substr( 0, start ).replace( /\n+$/g, '\n\n' ) +
-				text.substr( start )
-					.split( '\n' )
-					.sort()
-					.join( '\n' )
-					.replace( /^\n+/g, '' )
-					// TODO: remove these temporary hacks
-					.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' )
-					.replace( /(\* *\{\{ *Ação *\| *(\d+)\D.+\n)(\* *\{\{ *Ação *\| *\2\D.+\n)+/g, '$1' );
+					text.substr( start )
+						.split( '\n' )
+						.sort()
+						.join( '\n' )
+						.replace( /^\n+/g, '' )
+						// TODO: remove these temporary hacks
+						.replace( /(^|\n)\*\s+\{\{Ação/g, '$1*{' + '{Ação' )
+						.replace( /(\* *\{\{ *Ação *\| *(\d+)\D.+\n)(\* *\{\{ *Ação *\| *\2\D.+\n)+/g, '$1' );
 				editParams.basetimestamp = page.revisions[0].timestamp;
 				editParams.starttimestamp = page.revisions[0].starttimestamp;
 				editParams.text = text;
