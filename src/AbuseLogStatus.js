@@ -92,7 +92,7 @@ function onClick (){
 				editParams = {
 					action: 'edit',
 					title: mw.msg( 'al-page-title', filter ),
-					// section: 0,
+					// section: filter,
 					summary: mw.msg(
 						'al-summary',
 						revision,
@@ -148,7 +148,7 @@ function onClick (){
 				prop: 'info|revisions',
 				rvprop: 'content|timestamp',
 				intoken: 'edit',
-				// section: 0,
+				// rvsection: 0,
 				rvlimit: 1,
 				indexpageids: true,
 				titles: mw.msg( 'al-page-title', filter )
