@@ -52,7 +52,7 @@ function doEdit ( params ){
 		var edit = data.edit,
 			link;
 		if ( edit && edit.result && edit.result === 'Success' ) {
-			link = mw.util.wikiGetlink( edit.title ) +
+			link = mw.util.getUrl( edit.title ) +
 				'?diff=' + edit.newrevid;
 			mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
 				autoHide: false,
