@@ -18,7 +18,7 @@ mw.messages.set( {
 	'al-problem-template': '*{' + '{Ação|$1|erro=sim}}\n',
 	'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
 	'al-problem-template-with-note': '*{' + '{Ação|$1|erro=sim|nota=$2}}\n',
-	// Keep this synced with the regex from [[User:Helder.wiki/Tools/AbuseFilterStats.js]]
+	// Keep this synced with the regex from mw-gadget-AbuseFilterStats
 	'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|(?:.*?\\D)?($1)(?:\\D.*?)?\\}\\} *(?:\\n|$)',
 	'al-analysis-page-regex': '^Wikipédia:Filtro de edições\\/Análise\\/Filtro (\\d+)$',
 	'al-page-header': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
