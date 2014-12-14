@@ -1,6 +1,6 @@
 /**
  * Adds two links on pages like [[Special:AbuseLog/123]] to mark log entries as 'correct' or 'false positive'
- * (workaround for [[bugzilla:28213]]
+ * (workaround for [[phab:T30213]]
  * @author: Helder (https://github.com/he7d3r)
  * @license: CC BY-SA 3.0 <https://creativecommons.org/licenses/by-sa/3.0/>
  */
