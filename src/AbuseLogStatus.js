@@ -10,21 +10,13 @@
 
 	/* Translatable strings */
 	mw.messages.set( {
-		'al-page-title': 'Wikipédia:Filtro_de_edições/Análise/Filtro_$1',
-		'al-summary': 'Status do registro [[Special:AbuseLog/$1|$1]]: $2' +
-			' (edição feita com [[Special:PermaLink/36666969#Scripts|um script]])',
-		'al-correct-template': '*{' + '{Ação|$1}}\n',
-		'al-problem-template': '*{' + '{Ação|$1|erro=sim}}\n',
-		'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
-		'al-problem-template-with-note': '*{' + '{Ação|$1|erro=sim|nota=$2}}\n',
 		// Keep this synced with the regex from mw-gadget-AbuseFilterStats
 		'al-template-regex': '\\* *\\{\\{ *[Aa]ção *\\|(?:.*?\\D)?($1)(?:\\D.*?)?\\}\\} *(?:\\n|$)',
 		'al-analysis-page-regex': '^Wikipédia:Filtro de edições\\/Análise\\/Filtro (\\d+)$',
-		'al-page-header': '{' + '{Lista de falsos positivos (cabeçalho)}}\n\n',
-		'al-page-edit-success': '<p>A página <a href="$1">foi editada</a>.</p>',
-		'al-page-edit-conflict': 'Foi detectado um conflito entre edições. Por favor, tente novamente.',
-		'al-page-edit-error': 'Houve um erro ao tentar editar ($1). Por favor, tente novamente.',
-		'al-page-edit-error-unknown': 'Houve um erro desconhecido ao tentar editar. Por favor, tente novamente.',
+		'al-save-success': '<p>A avaliação foi <a href="$1">gravada</a>.</p>',
+		'al-save-error-login': '<p>Houve um erro desconhecido ao tentar gravar a avaliação.</p>',
+		'al-save-error': '<p>Houve um erro ao tentar gravar a avaliação.' +
+			' Certifique-se de que está registrado em "$1".</p>',
 		'al-log-false-positive': 'Um editor já identificou que este registro foi um falso positivo',
 		'al-log-correct': 'Um editor já identificou que este registro estava correto',
 		'al-log-false-positive-note': 'Um editor já identificou que este registro foi um falso positivo: $1',
@@ -34,17 +26,18 @@
 		'al-specific-question': 'Foi correto classificar esta ação como "$1"?',
 		'al-correct-description': 'Marcar este registro como correto',
 		'al-yes': 'Sim',
-		'al-correct': 'Correto',
 		'al-incorrect-description': 'Marcar este registro como falso positivo',
 		'al-no': 'Não',
-		'al-incorrect': 'Falso positivo',
 		'al-placeholder': 'Observação sobre esta ação (se precisar)',
 		'al-submit': 'Enviar',
 		'al-submit-description': 'Enviar a sua análise (editará automaticamente a página apropriada)'
 	} );
 
-	var api, filter, reTemplate, revision,
+	var api, reTemplate,
+		aflId,
 		db = mw.config.get( 'wgDBname' ),
+		labsUrl = 'https://tools.wmflabs.org/ptwikis/registro',
+		loginUrl = 'https://tools.wmflabs.org/ptwikis/login',
 		conf = {
 			ptwiki: {
 				header: 'Predefinição:Lista de falsos positivos (cabeçalho)',
@@ -64,136 +57,76 @@
 			}
 		};
 
-	function doEdit( params ) {
-		api.post( params )
-		.done( function ( data ) {
-			var edit = data.edit,
-				link;
-			if ( edit && edit.result && edit.result === 'Success' ) {
-				link = mw.util.getUrl( edit.title ) +
-					'?diff=' + edit.newrevid;
-				mw.notify( $( mw.msg( 'al-page-edit-success', link ) ), {
-					autoHide: false,
-					tag: 'status'
-				} );
-			} else {
-				mw.notify( mw.msg( 'al-page-edit-error-unknown' ), {
-					autoHide: false,
-					tag: 'status'
-				} );
-			}
-		} )
-		.fail( function ( code ) {
-			if ( code === 'editconflict' ) {
-				mw.notify( mw.msg( 'al-page-edit-conflict' ), {
-					autoHide: false,
-					tag: 'status'
-				} );
-				return;
-			}
-			mw.notify( mw.msg( 'al-page-edit-error', code ), {
-				autoHide: false,
-				tag: 'status'
-			} );
-		} )
-		.always( function () {
-			$.removeSpinner( 'af-status-spinner' );
-			$( '#al-submit' ).removeAttr( 'disabled' );
-		} );
-	}
-
 	function onClick() {
-		var note,
-			falsePositive = $( 'input[type="radio"]:checked' ).val() !== 'correct',
-			defineStatus = function ( data ) {
-				var template, start, text, i,
-					editParams = {
-						action: 'edit',
-						title: mw.msg( 'al-page-title', filter ),
-						// section: filter,
-						summary: mw.msg(
-							'al-summary',
-							revision,
-							falsePositive ? mw.msg( 'al-incorrect' ) : mw.msg( 'al-correct' )
-						),
-						minor: true,
-						watchlist: 'nochange',
-						token: mw.user.tokens.get( 'editToken' )
-					},
-					page = data.query.pages[ data.query.pageids[ 0 ] ],
-					isMissing = page.missing === '';
-				if ( note ) {
-					note = note.replace( /\|/g, '{{!}}' );
-					template = falsePositive
-						? mw.message( 'al-problem-template-with-note', revision, note ).plain()
-						: mw.message( 'al-correct-template-with-note', revision, note ).plain();
-				} else {
-					template = falsePositive
-						? mw.message( 'al-problem-template', revision ).plain()
-						: mw.message( 'al-correct-template', revision ).plain();
-				}
-				if ( isMissing ) {
-					text = mw.message( 'al-page-header' ).plain();
-					editParams.text = text;
-					doEdit( editParams );
-				} else {
-					text = page.revisions[ 0 ][ '*' ];
-					text = text.replace( reTemplate, '' ) + '\n' + template;
-					start = text.search( conf[ db ].reStart );
-					text = text.substr( 0, start ).replace( /\n+$/g, '\n\n' ) +
-						text.substr( start )
-							.split( '\n' )
-							.sort()
-							.join( '\n' )
-							.replace( /^\n+/g, '' )
-					// TODO: remove these temporary hacks
-					for ( i = 0; conf[ db ].cleanup && i < conf[ db ].cleanup.length; i++ ) {
-						text = text.replace( conf[ db ].cleanup[ i ][ 0 ], conf[ db ].cleanup[ i ][ 1 ] )
-					}
-					editParams.basetimestamp = page.revisions[ 0 ].timestamp;
-					editParams.starttimestamp = page.revisions[ 0 ].starttimestamp;
-					editParams.text = text;
-					doEdit( editParams );
-				}
+		var logEntry = {
+				action: 'insert',
+				type: 'teste'
+				// id: aflId,
+				// 0: false positive; 1: true positive
+				// status: 0,
+				// comment: 'some notes'
 			},
-			getPageContent = function () {
-				$( '#mw-content-text' ).find( 'fieldset p > span > a' ).each( function () {
-					filter = $( this ).attr( 'href' ).match( conf[ db ].reFilterLink );
-					if ( filter && filter[ 1 ] ) {
-						filter = filter[ 1 ];
-						return false;
-					}
-				} );
+			save = function () {
 				$( '#al-submit' ).injectSpinner( 'af-status-spinner' );
-				api.get( {
-					prop: 'info|revisions',
-					rvprop: 'content|timestamp',
-					intoken: 'edit',
-					// rvsection: 0,
-					rvlimit: 1,
-					indexpageids: true,
-					titles: mw.msg( 'al-page-title', filter )
+				$.ajax( {
+					url: labsUrl,
+					dataType: 'jsonp',
+					data: {
+						action: 'insert',
+						// FIXME: change to 'filtro'?
+						type: 'teste',
+						id: logEntry.id,
+						status: logEntry.status,
+						comment: logEntry.comment
+					}
 				} )
-				.done( defineStatus )
-				.fail( function () {
+				.done( function ( data ) {
+					console.log( data );
+					if ( data.status === 'success' ) {
+						mw.notify( $( mw.msg( 'al-save-success', labsUrl ) ), {
+							autoHide: false,
+							tag: 'status'
+						} );
+					} else {
+						mw.notify( $( mw.msg( 'al-save-error' ) ), {
+							autoHide: false,
+							tag: 'status'
+						} );
+					}
+				} )
+				.fail( function ( data ) {
+					console.log( data );
+					mw.notify( $( mw.msg( 'al-save-error-login', loginUrl ) ), {
+						autoHide: false,
+						tag: 'status'
+					} );
+				} )
+				.always( function () {
 					$.removeSpinner( 'af-status-spinner' );
+					$( '#al-submit' ).removeAttr( 'disabled' );
 				} );
 			};
+
 		$( '#al-submit' ).attr( 'disabled', 'disabled' );
-		note = $( '#al-note' ).val();
+
+		// 0: The edit should not have triggered the filter (false positive)
+		// 1: The edit should have triggered the filter (true positive)
+		logEntry.status = $( 'input[type="radio"]:checked' ).val() === 'correct' ? 1 : 0;
+		logEntry.comment = $( '#al-note' ).val();
+		logEntry.id = aflId;
 
 		mw.loader.using( [
-			'mediawiki.api.edit',
+			// 'mediawiki.api.edit',
 			'jquery.spinner',
 			'mediawiki.notify',
 			'mediawiki.notification'
-		], getPageContent );
+		], save );
 	}
 
 	function addAbuseFilterStatusLinks() {
 		var desc = $( 'fieldset' ).find( 'p:first span:first' )
 			.text().match( conf[ db ].reDesc );
-		reTemplate = new RegExp( mw.message( 'al-template-regex', revision ).plain(), 'g' );
+		reTemplate = new RegExp( mw.message( 'al-template-regex', aflId ).plain(), 'g' );
 		$( 'fieldset h3' ).first().before(
 			$( '<h3>' ).text( mw.msg( 'al-header' ) ),
 			$( '<p>' ).text(
@@ -354,8 +287,7 @@
 		} );
 	}
 
-	if ( mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog'
-		&& conf[ db ]
+	if ( mw.config.get( 'wgCanonicalSpecialPageName' ) === 'AbuseLog' && conf[ db ]
 	) {
 		$.when(
 			mw.loader.using( 'mediawiki.api' ),
@@ -364,7 +296,7 @@
 			var id = mw.config.get( 'wgPageName' ).match( conf[ db ].reDetailsPage );
 			api = new mw.Api();
 			if ( id && id[ 1 ] ) {
-				revision = id[ 1 ];
+				aflId = id[ 1 ];
 				addAbuseFilterStatusLinks();
 			} else {
 				getVerificationPages();
