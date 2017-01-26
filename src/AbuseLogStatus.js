@@ -339,15 +339,18 @@
 	) {
 		reDetailsPage = /Especial:Registro_de_abusos\/(\d+)$/;
 		reFilterLink = /^\/wiki\/Especial:Filtro_de_abusos\/(\d+)$/;
-		mw.loader.using( 'mediawiki.api', function () {
+		$.when(
+			mw.loader.using( 'mediawiki.api' ),
+			$.ready
+		).then( function () {
 			api = new mw.Api();
 			if ( mw.config.get( 'wgTitle' ) === 'Registro de abusos' ) {
-				$( getVerificationPages );
+				getVerificationPages();
 			} else {
 				revision = mw.config.get( 'wgPageName' ).match( reDetailsPage );
 				if ( revision && revision[ 1 ] ) {
 					revision = revision[ 1 ];
-					$( addAbuseFilterStatusLinks );
+					addAbuseFilterStatusLinks();
 				}
 			}
 		} );
