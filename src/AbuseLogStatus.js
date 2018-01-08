@@ -1,5 +1,6 @@
 /**
- * Adds two links on pages like [[Special:AbuseLog/123]] to mark log entries as 'correct' or 'false positive'
+ * Adds two links on pages like [[Special:AbuseLog/123]] to mark log entries
+ * as 'correct' or 'false positive'
  * (workaround for [[phab:T30213]]
  *
  * @author: Helder (https://github.com/he7d3r)
@@ -133,7 +134,7 @@
 						: mw.message( 'al-correct-template', revision ).plain();
 				}
 				if ( isMissing ) {
-					text = mw.message( 'al-page-header' ).plain();
+					text = mw.message( 'al-page-header' ).plain() + '\n\n' + template;
 					editParams.text = text;
 					doEdit( editParams );
 				} else {
