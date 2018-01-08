@@ -134,7 +134,7 @@
 						: mw.message( 'al-correct-template', revision ).plain();
 				}
 				if ( isMissing ) {
-					text = mw.message( 'al-page-header' ).plain() + '\n\n' + template;
+					text = mw.message( 'al-page-header' ).plain() + '\n' + template;
 					editParams.text = text;
 					doEdit( editParams );
 				} else {
