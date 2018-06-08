@@ -184,7 +184,7 @@
 		note = $( '#al-note' ).val();
 
 		mw.loader.using( [
-			'mediawiki.api.edit',
+			'mediawiki.api',
 			'jquery.spinner',
 			'mediawiki.notify',
 			'mediawiki.notification'
