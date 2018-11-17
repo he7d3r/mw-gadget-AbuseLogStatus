@@ -13,7 +13,7 @@
 	mw.messages.set( {
 		'al-page-title': 'Wikipédia:Filtro_de_edições/Análise/Filtro_$1',
 		'al-summary': 'Status do registro [[Special:AbuseLog/$1|$1]]: $2' +
-			' (edição feita com [[Special:PermaLink/36666969#Scripts|um script]])',
+			' (edição feita com [[Wikipédia:Filtro de edições/Análise#Scripts|um script]])',
 		'al-correct-template': '*{' + '{Ação|$1}}\n',
 		'al-problem-template': '*{' + '{Ação|$1|erro=sim}}\n',
 		'al-correct-template-with-note': '*{' + '{Ação|$1|nota=$2}}\n',
