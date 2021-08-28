@@ -119,7 +119,7 @@
 						),
 						minor: true,
 						watchlist: 'nochange',
-						token: mw.user.tokens.get( 'editToken' )
+						token: mw.user.tokens.get( 'csrfToken' )
 					},
 					page = data.query.pages[ data.query.pageids[ 0 ] ],
 					isMissing = page.missing === '';
